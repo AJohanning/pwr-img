@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POWER produktbilleder</title>
+<style>
+  :root {
+    --orange: #FF5000;
+    --bg: #F5F5F7;
+    --card: #FFFFFF;
+    --text: #111111;
+    --muted: #6E6E73;
+    --border: #E5E5EA;
+    --ok: #1E8E3E;
+    --err: #D93025;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F0F11;
+      --card: #1C1C1E;
+      --text: #F5F5F7;
+      --muted: #A1A1A6;
+      --border: #2C2C2E;
+      --ok: #5BD17A;
+      --err: #FF6B5E;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 Inter, "Segoe UI", Arial, Helvetica, sans-serif;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h1 span { color: var(--orange); }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  label { display: block; font-weight: 600; margin: 0 0 6px; }
+  textarea, select {
+    width: 100%; font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+  }
+  textarea { min-height: 160px; resize: vertical; font-family: Consolas, Menlo, monospace; }
+  textarea:focus, select:focus { outline: 2px solid var(--orange); outline-offset: 1px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  button {
+    width: 100%; font: inherit; font-weight: 700; color: #FFFFFF; background: var(--orange);
+    border: 0; border-radius: 10px; padding: 14px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .progress { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 16px; display: none; }
+  .progress div { height: 100%; width: 0; background: var(--orange); transition: width .2s; }
+  #status { margin-top: 12px; font-size: 14px; }
+  #log { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; font-family: Consolas, Menlo, monospace; }
+  #log li { padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .ok { color: var(--ok); } .err { color: var(--err); }
+  footer { color: var(--muted); font-size: 12px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span>POWER</span> produktbilleder</h1>
+  <p class="sub">Indsæt produkt-ID'er, vælg indstillinger, og download alle billeder som ZIP.</p>
+
+  <div class="card">
+    <label for="ids">Produkt-ID'er</label>
+    <textarea id="ids" placeholder="3190503&#10;4093165"></textarea>
+    <p class="hint">Ét ID pr. linje. Du kan også indsætte hele produkt-URL'er.</p>
+
+    <div class="grid">
+      <div>
+        <label for="market">Land</label>
+        <select id="market">
+          <option value="dk">power.dk</option>
+          <option value="no">power.no</option>
+          <option value="se">power.se</option>
+          <option value="fi">power.fi</option>
+        </select>
+      </div>
+      <div>
+        <label for="size">Opløsning</label>
+        <select id="size">
+          <option value="max">Største</option>
+          <option value="2400">2400 px</option>
+          <option value="1200">1200 px</option>
+          <option value="900">900 px</option>
+          <option value="600">600 px</option>
+          <option value="300">300 px</option>
+        </select>
+      </div>
+      <div>
+        <label for="format">Format</label>
+        <select id="format">
+          <option value="jpg">JPG</option>
+          <option value="png">PNG</option>
+          <option value="webp">WEBP</option>
+        </select>
+      </div>
+      <div>
+        <label for="bg">Baggrund</label>
+        <select id="bg">
+          <option value="white">Hvid</option>
+          <option value="transparent">Transparent</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="go">Download ZIP</button>
+    <div class="progress" id="bar"><div></div></div>
+    <div id="status"></div>
+    <ul id="log"></ul>
+  </div>
+
+  <footer>
+    Billederne hentes fra power-cdn.net og skaleres aldrig op. Hvis et billede ikke findes i den valgte størrelse, bruges den største tilgængelige.
+    JPG har altid hvid baggrund. Nogle billeder (fx miljøbilleder) findes kun med hvid baggrund.
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* ============ KONFIGURATION ============
+   Vercel/Netlify: lad PROXY_URL være tom. vercel.json / netlify.toml sender /power-dk/... videre til power.dk.
+   GitHub Pages:   sæt PROXY_URL til jeres Cloudflare Worker, fx "https://power-billeder.ditnavn.workers.dev"
+*/
+const PROXY_URL = "";
+/* ======================================= */
+
+const CDN = "https://media.power-cdn.net";
+const $ = id => document.getElementById(id);
+
+function pageUrl(market, pid) {
+  const path = `/x/p-${pid}/?spa=true`;
+  if (PROXY_URL) return `${PROXY_URL.replace(/\/$/, "")}/?url=${encodeURIComponent(`https://www.power.${market}${path}`)}`;
+  return `/power-${market}${path}`;
+}
+
+function parseIds(text) {
+  const ids = [];
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t) continue;
+    const m = t.match(/p-(\d+)/) || t.match(/^(\d+)$/);
+    ids.push(m ? m[1] : t);
+  }
+  return [...new Set(ids)];
+}
+
+function ext(filename) { return filename.split(".").pop().toLowerCase(); }
+
+// Vælg den bedste kilde-variant til de valgte indstillinger
+function pickVariant(variants, size, bg) {
+  const target = size === "max" ? Infinity : Number(size);
+  const wantT = bg === "transparent";
+  const fmtRank = f => ({ png: 3, webp: 2, jpg: 1 })[ext(f)] || 0;
+  const score = v => {
+    const w = v.width;
+    // 1) Mindste bredde >= mål (så vi kun skalerer ned), ellers største under mål
+    const fit = w >= target ? 1e6 - w : w;
+    const bgMatch = (!!v.isTransparent === wantT) ? 1 : 0;
+    return fit * 100 + bgMatch * 10 + fmtRank(v.filename);
+  };
+  if (size === "max") {
+    return [...variants].sort((a, b) =>
+      (b.width - a.width) || ((!!b.isTransparent === wantT) - (!!a.isTransparent === wantT)) || (fmtRank(b.filename) - fmtRank(a.filename)))[0];
+  }
+  return [...variants].sort((a, b) => score(b) - score(a))[0];
+}
+
+async function convert(blob, { size, format, bg }) {
+  const img = await createImageBitmap(blob);
+  const target = size === "max" ? img.width : Math.min(Number(size), img.width);
+  const scale = target / img.width;
+  const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  if (bg === "white" || format === "jpg") { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, w, h); }
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, w, h);
+  const mime = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" }[format];
+  const out = await new Promise(r => c.toBlob(r, mime, 0.92));
+  return { blob: out, w, h };
+}
+
+function log(text, cls) {
+  const li = document.createElement("li");
+  li.textContent = text; if (cls) li.className = cls;
+  $("log").appendChild(li);
+}
+
+$("go").addEventListener("click", async () => {
+  const ids = parseIds($("ids").value);
+  if (!ids.length) { $("status").textContent = "Indsæt mindst ét produkt-ID."; return; }
+  const opts = { market: $("market").value, size: $("size").value, format: $("format").value, bg: $("bg").value };
+  if (opts.format === "jpg" && opts.bg === "transparent") opts.bg = "white";
+
+  $("go").disabled = true; $("log").innerHTML = ""; $("bar").style.display = "block";
+  const bar = $("bar").firstElementChild;
+  const zip = new JSZip();
+  const csv = [["produkt_id", "titel", "billede_nr", "fil", "bredde", "hoejde", "kilde_url"]];
+  let count = 0;
+
+  for (let i = 0; i < ids.length; i++) {
+    const pid = ids[i];
+    $("status").textContent = `Henter ${pid} (${i + 1} af ${ids.length})`;
+    try {
+      if (!/^\d+$/.test(pid)) throw new Error("ugyldigt ID");
+      const res = await fetch(pageUrl(opts.market, pid));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const images = data?.model?.extendedProduct?.productImages;
+      if (!images) throw new Error("ikke fundet");
+      const title = (data?.pwrMainModel?.seoModel?.title || "").split(" - POWER")[0];
+      if (!images.length) { log(`${pid}: ingen billeder`, "err"); continue; }
+
+      for (let n = 0; n < images.length; n++) {
+        const v = pickVariant(images[n].variants, opts.size, opts.bg);
+        const src = `${CDN}${images[n].basePath}/${v.filename}`;
+        const blob = await (await fetch(src)).blob();
+        const out = await convert(blob, opts);
+        const name = `${pid}_${n + 1}.${opts.format}`;
+        zip.file(name, out.blob);
+        csv.push([pid, title, n + 1, name, out.w, out.h, src]);
+        count++;
+      }
+      log(`${pid}: ${images.length} billeder  ${title}`, "ok");
+    } catch (e) {
+      log(`${pid}: fejl (${e.message})`, "err");
+    }
+    bar.style.width = `${((i + 1) / ids.length) * 100}%`;
+  }
+
+  if (count) {
+    const csvText = "﻿" + csv.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+    zip.file("oversigt.csv", csvText);
+    $("status").textContent = "Pakker ZIP...";
+    const content = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = `power_billeder_${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    $("status").textContent = `Færdig: ${count} billeder downloadet.`;
+  } else {
+    $("status").textContent = "Ingen billeder fundet.";
+  }
+  $("go").disabled = false;
+});
+</script>
+</body>
+</html>
