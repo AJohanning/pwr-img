@@ -1,54 +1,165 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="da" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POWER produktbilleder</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+PHN2ZyBpZD0iYiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzIgMzIiPjxkZWZzPjwvZGVmcz48ZyBpZD0iYyI+PGcgaWQ9ImQiPjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iI0Y5NjcwMCI+PC9yZWN0Pjxwb2x5Z29uIGNsYXNzPSJlIiBmaWxsPSIjRkZGRkZGIiBwb2ludHM9IjcuNzczIDE5LjcxMiAyNy4wNCAxOS43MTIgNC45NiAxMC43NjIgMTEuNTcxIDE3LjE1NSA3Ljc3MyAxOS43MTIiPjwvcG9seWdvbj48L2c+PC9nPjwvc3ZnPg==">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,800;0,900;1,800;1,900&family=Barlow:wght@500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Lys tilstand er standard. Mørk tilstand kun hvis brugeren selv har valgt den.
+  try { if (localStorage.getItem("pwr-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+</script>
 <style>
-  :root { --orange:#FF5000; --bg:#F5F5F7; --card:#FFFFFF; --text:#111111; --muted:#6E6E73; --border:#E5E5EA; --ok:#1E8E3E; --err:#D93025; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#0F0F11; --card:#1C1C1E; --text:#F5F5F7; --muted:#A1A1A6; --border:#2C2C2E; --ok:#5BD17A; --err:#FF6B5E; }
+  :root {
+    --orange: #F96700; --orange-hover: #D85800; --black: #000000; --grey: #252525;
+    --yellow: #FFE100; --green: #158C43; --alert: #CC2B04;
+    --skew: -12.37deg;
+    --font-display: "Gotham Narrow Ultra", "Gotham Narrow", "Barlow Condensed", Impact, system-ui, sans-serif;
+    --font-heading: "Gotham Narrow", "Barlow Condensed", Impact, system-ui, sans-serif;
+    --font-body: "Gotham Narrow", "Barlow", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F7F7; --surface: #FFFFFF; --fg: #252525; --fg-strong: #000000; --fg-muted: #5F5F5F;
+    --border: #DCDCDC; --border-strong: #BDBDBD; --field: #FFFFFF; --shadow: 0 4px 12px rgba(0,0,0,.10);
+    --chip-muted: #8F8F8F;
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000; --surface: #161616; --fg: #FFFFFF; --fg-strong: #FFFFFF; --fg-muted: rgba(255,255,255,.64);
+    --border: rgba(255,255,255,.12); --border-strong: rgba(255,255,255,.24); --field: #0B0B0B; --shadow: none;
+    --chip-muted: rgba(255,255,255,.5);
   }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 Inter,"Segoe UI",Arial,Helvetica,sans-serif; }
-  main { max-width:560px; margin:0 auto; padding:40px 16px 64px; }
-  h1 { font-size:26px; margin:0 0 6px; } h1 span { color:var(--orange); }
-  .sub { color:var(--muted); margin:0 0 24px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  label { display:block; font-weight:600; margin:0 0 6px; }
-  textarea { width:100%; min-height:180px; resize:vertical; font:14px Consolas,Menlo,monospace; color:var(--text);
-             background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
-  textarea:focus { outline:2px solid var(--orange); outline-offset:1px; }
-  .hint { color:var(--muted); font-size:13px; margin:6px 0 18px; }
-  button { width:100%; font:inherit; font-weight:700; color:#FFFFFF; background:var(--orange); border:0;
-           border-radius:10px; padding:14px; cursor:pointer; }
-  button:disabled { opacity:.5; cursor:default; }
-  .bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:16px; display:none; }
-  .bar div { height:100%; width:0; background:var(--orange); transition:width .2s; }
-  #status { margin-top:12px; font-size:14px; }
-  #log { list-style:none; padding:0; margin:10px 0 0; font:13px Consolas,Menlo,monospace; }
-  #log li { padding:3px 0; border-bottom:1px solid var(--border); }
-  .ok { color:var(--ok); } .err { color:var(--err); }
-  footer { color:var(--muted); font-size:12px; margin-top:18px; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 500 16px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+
+  /* Header: sort navigationslinje som på power.dk */
+  header { background: var(--black); }
+  .bar { max-width: 760px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .logo { height: 26px; width: auto; display: block; }
+  .theme { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #FFFFFF;
+           border: 1px solid rgba(255,255,255,.3); border-radius: 6px; padding: 8px 12px; cursor: pointer;
+           font: 600 14px var(--font-body); transition: border-color .12s, background .12s; }
+  .theme:hover { border-color: #FFFFFF; }
+  .theme svg { width: 16px; height: 16px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+
+  /* Hero */
+  .pill { display: inline-block; background: var(--orange); padding: 6px 16px; transform: skewX(var(--skew)); margin-left: 6px; }
+  .pill span { display: inline-block; transform: skewX(12.37deg); color: #FFFFFF; font: 900 15px/1 var(--font-heading);
+               text-transform: uppercase; letter-spacing: .08em; }
+  h1 { font: italic 900 clamp(44px, 9vw, 76px)/.92 var(--font-display); text-transform: uppercase; letter-spacing: -.02em;
+       color: var(--fg-strong); margin: 18px 0 12px; }
+  h1 em { font-style: italic; color: var(--orange); }
+  .lead { font-size: 18px; color: var(--fg-muted); margin: 0 0 32px; max-width: 560px; text-wrap: pretty; }
+
+  /* Container */
+  .card { background: var(--surface); border: 1px solid var(--border); border-top: 6px solid var(--orange);
+          border-radius: 8px; box-shadow: var(--shadow); padding: 30px; }
+  .label { display: block; font: 900 14px/1 var(--font-heading); text-transform: uppercase; letter-spacing: .04em;
+           color: var(--fg-strong); margin: 0 0 10px; }
+  textarea { width: 100%; min-height: 170px; resize: vertical; font: 500 16px/1.5 Consolas, Menlo, monospace;
+             color: var(--fg); background: var(--field); border: 1px solid var(--border-strong); border-radius: 2px; padding: 12px 14px;
+             transition: border-color .12s, box-shadow .12s; }
+  textarea:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 2px rgba(249,103,0,.25); }
+  .hint { font-size: 14px; color: var(--fg-muted); margin: 8px 0 26px; }
+
+  /* Valg af baggrund */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .opt { position: relative; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .opt label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid var(--border-strong);
+               border-radius: 6px; cursor: pointer; transition: border-color .12s, background .12s; background: var(--field); }
+  .opt label:hover { border-color: var(--fg-muted); }
+  .opt input:checked + label { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(249,103,0,.25); }
+  .opt input:focus-visible + label { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .swatch { flex: none; width: 40px; height: 40px; border-radius: 4px; border: 1px solid var(--border-strong); }
+  .swatch.t { background-color: #FFFFFF; background-image:
+      linear-gradient(45deg, #D6D6D6 25%, transparent 25%), linear-gradient(-45deg, #D6D6D6 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #D6D6D6 75%), linear-gradient(-45deg, transparent 75%, #D6D6D6 75%);
+      background-size: 12px 12px; background-position: 0 0, 0 6px, 6px -6px, -6px 0; }
+  .swatch.w { background: #FFFFFF; }
+  .opt b { display: block; font: 900 16px/1.2 var(--font-heading); color: var(--fg-strong); }
+  .opt small { display: block; font-size: 13px; color: var(--fg-muted); margin-top: 2px; }
+
+  /* Knap */
+  .btn { width: 100%; font: 500 18px/1 var(--font-body); color: #FFFFFF; background: var(--orange); border: 0; border-radius: 6px;
+         padding: 17px 24px 16px; cursor: pointer; transition: background .12s, transform .12s; box-shadow: 0 8px 32px rgba(249,103,0,.25); }
+  .btn:hover { background: var(--orange-hover); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+  .progress { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 20px; display: none; }
+  .progress div { height: 100%; width: 0; background: var(--orange); transition: width .2s cubic-bezier(.4,0,.2,1); }
+  #status { margin-top: 14px; font-weight: 600; color: var(--fg-strong); }
+  #status:empty { display: none; }
+  #log { list-style: none; padding: 0; margin: 14px 0 0; }
+  #log li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 15px; }
+  .chip { flex: none; min-width: 74px; text-align: center; font: 900 12px/1 var(--font-heading); text-transform: uppercase;
+          letter-spacing: .04em; padding: 6px 8px 5px; border-radius: 6px; color: #FFFFFF; }
+  .chip.ok { background: var(--green); }
+  .chip.err { background: transparent; color: var(--chip-muted); border: 1.5px solid var(--chip-muted); padding: 4.5px 6.5px 3.5px; }
+  .id { font: 600 15px Consolas, Menlo, monospace; color: var(--fg-strong); flex: none; }
+  .meta { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; font-size: 13px; color: var(--fg-muted); }
+  @media (max-width: 520px) { .seg { grid-template-columns: 1fr; } .card { padding: 22px; } .theme .txt { display: none; } }
 </style>
 </head>
 <body>
+<header>
+  <div class="bar">
+    <a href="https://www.power.dk" target="_blank" rel="noopener" aria-label="power.dk"><svg role="img" aria-label="POWER" class="logo" id="Lager_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 686.07 153.31">
+  <defs></defs>
+  <g id="c">
+    <polygon fill="#F96700" points="440.6 81.47 425.41 153.24 425.41 153.26 425.4 153.3 544.47 153.3 547.24 140.51 467.31 140.49 470.92 123.73 516.79 123.73 519.35 111.03 473.62 111.03 477.09 94.15 477.1 94.15 555.02 94 557.67 81.49 440.6 81.47"></polygon>
+    <path fill="#F96700" d="M88.52,94.15h-36.83l-5.52,26.29h36.83l5.52-26.29ZM126.82,95.73c0,1.59-.2,3.29-.57,5.1l-2.7,12.92c-1.73,8.01-6.13,13.63-13.18,16.88-2.93,1.36-6.31,2.2-10.13,2.5h-56.77l-4.28,20.17H0l15.21-71.84h95.96c10.43.67,15.66,5.43,15.66,14.27"></path>
+    <path fill="#F96700" d="M181.77,94.15l-9.79,46.46h34.23l9.8-46.46s-34.24,0-34.24,0ZM238.65,81.47c10.43.67,15.65,5.43,15.65,14.27,0,1.59-.19,3.29-.56,5.1l-6.98,33.09c-1.65,8.09-6.04,13.76-13.18,17-2.93,1.36-6.3,2.16-10.13,2.39h-74.11c-10.51-.6-15.76-5.36-15.76-14.28,0-1.58.19-3.28.57-5.1l6.98-33.09c1.72-8.08,6.12-13.71,13.17-16.88,3.01-1.36,6.38-2.2,10.15-2.49h74.21,0Z"></path>
+    <path fill="#F96700" d="M388.21,153.3h-127.72l15.2-71.84h39.19l-12.5,59.37h14.65l12.61-59.37h39.07l-12.49,59.37h14.75l12.5-59.37h39.19l-11.03,52.45c-1.73,8.01-6.16,13.64-13.29,16.89-2.93,1.36-6.31,2.2-10.14,2.5"></path>
+    <path fill="#F96700" d="M630.89,120.44h-25.45l5.11-24.42.39-1.87h36.84l-5.52,26.29h-11.38ZM678.03,83.07s-.08-.03-.12-.05c-.41-.18-.89-.33-1.34-.47-.64-.2-1.32-.38-2.02-.53-.25-.05-.47-.11-.72-.15-1.05-.19-2.18-.33-3.42-.41h-95.95l-15.2,71.84h39.2l4.27-20.17h30.6l3.88,20.17h39.75l-4.93-23.92c5.66-3.36,9.26-8.57,10.78-15.62l2.71-12.92c.37-1.81.56-3.51.56-5.1,0-6.32-2.71-10.51-8.05-12.67"></path>
+    <polygon fill="#fff" points="278.41 68.69 425.39 68.69 256.94 0 307.37 49.07 278.41 68.69"></polygon>
+  </g>
+</svg></a>
+    <button class="theme" id="theme" type="button" aria-label="Skift mellem lys og mørk tilstand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <span class="txt">Mørk</span>
+    </button>
+  </div>
+</header>
+
 <main>
-  <h1><span>POWER</span> produktbilleder</h1>
-  <p class="sub">Indsæt varenumre, og download hovedbilledet for hvert produkt som PNG med transparent baggrund i højeste opløsning.</p>
+  <div class="pill"><span>For forhandlere</span></div>
+  <h1>Produkt&shy;billeder <em>på sekunder</em></h1>
+  <p class="lead">Indsæt varenumre, og få hovedbilledet for hvert produkt i højeste opløsning. Alt samlet i én ZIP-fil.</p>
 
   <div class="card">
-    <label for="ids">Varenumre</label>
+    <label class="label" for="ids">Varenumre</label>
     <textarea id="ids" placeholder="3190503&#10;4093165&#10;4320116"></textarea>
     <p class="hint">Ét pr. linje. Varenummeret er tallet efter "p-" i produktets adresse på power.dk. Hele adresser virker også.</p>
-    <button id="go">Download billeder (ZIP)</button>
-    <div class="bar" id="bar"><div></div></div>
-    <div id="status"></div>
+
+    <span class="label">Baggrund</span>
+    <div class="seg" role="radiogroup" aria-label="Baggrund">
+      <div class="opt">
+        <input type="radio" name="bg" id="bg-t" value="transparent" checked>
+        <label for="bg-t"><span class="swatch t"></span><span><b>Transparent</b><small>Til web og layout</small></span></label>
+      </div>
+      <div class="opt">
+        <input type="radio" name="bg" id="bg-w" value="white">
+        <label for="bg-w"><span class="swatch w"></span><span><b>Hvid</b><small>Til print og webshop</small></span></label>
+      </div>
+    </div>
+
+    <button class="btn" id="go" type="button">Download billeder</button>
+    <div class="progress" id="bar"><div></div></div>
+    <div id="status" aria-live="polite"></div>
     <ul id="log"></ul>
   </div>
-
-  <footer>Filerne hedder varenummer.png, fx 3190503.png. Størrelsen er den største, POWER har (op til 2400 x 2400 px).</footer>
 </main>
+
+<footer>Filerne hedder varenummer.png, fx 3190503.png, i den største størrelse, POWER har (op til 2400 x 2400 px). Varenumre uden billede står i mangler.txt.</footer>
 
 <script>
 const CDN = "https://media.power-cdn.net";
@@ -56,6 +167,23 @@ const API = "/power-dk/api/v2/products?ids=";   // sendes videre til power.dk af
 const BATCH = 40;
 const $ = id => document.getElementById(id);
 
+// ---------- Tema ----------
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("theme").querySelector(".txt").textContent = t === "dark" ? "Lys" : "Mørk";
+  $("theme").querySelector("svg").innerHTML = t === "dark"
+    ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+    : '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  try { localStorage.setItem("pwr-theme", t); } catch (e) {}
+}
+setTheme(document.documentElement.dataset.theme);
+$("theme").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+// Husk valg af baggrund
+try { const b = localStorage.getItem("pwr-bg"); if (b === "white") $("bg-w").checked = true; } catch (e) {}
+document.querySelectorAll('input[name="bg"]').forEach(r => r.onchange = () => { try { localStorage.setItem("pwr-bg", r.value); } catch (e) {} });
+
+// ---------- Logik ----------
 function parseIds(text) {
   const out = [];
   for (const line of text.split(/[\r\n,;]+/)) {
@@ -66,13 +194,13 @@ function parseIds(text) {
   return [...new Set(out)];
 }
 
-// Hovedbilledets største transparente variant
-function bestTransparent(img) {
+// Hovedbilledets største variant. Transparent foretrækkes altid (kan også lægges på hvid).
+function bestImage(img, bg) {
   if (!img || !img.variants) return null;
+  const pick = list => list.sort((a, b) => b.width - a.width)[0];
   const t = img.variants.filter(v => v.isTransparent);
-  if (!t.length) return null;
-  t.sort((a, b) => b.width - a.width);
-  return `${CDN}${img.basePath}/${t[0].filename}`;
+  const v = t.length ? pick(t) : (bg === "white" ? pick([...img.variants]) : null);
+  return v ? `${CDN}${img.basePath}/${v.filename}` : null;
 }
 
 async function fetchImage(url) {
@@ -87,11 +215,13 @@ async function fetchImage(url) {
   throw last;
 }
 
-async function toPng(blob) {
+async function toPng(blob, bg) {
   const img = await createImageBitmap(blob);
   const c = document.createElement("canvas");
   c.width = img.width; c.height = img.height;
-  c.getContext("2d").drawImage(img, 0, 0);
+  const ctx = c.getContext("2d");
+  if (bg === "white") { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, c.width, c.height); }
+  ctx.drawImage(img, 0, 0);
   const out = await new Promise(r => c.toBlob(r, "image/png"));
   return { data: new Uint8Array(await out.arrayBuffer()), w: img.width };
 }
@@ -122,41 +252,47 @@ function makeZip(files) {
   return new Blob([...parts, ...central, end], { type: "application/zip" });
 }
 
-function log(text, cls) { const li = document.createElement("li"); li.textContent = text; li.className = cls || ""; $("log").appendChild(li); }
+function log(ok, id, text) {
+  const li = document.createElement("li");
+  const chip = document.createElement("span"); chip.className = "chip " + (ok ? "ok" : "err"); chip.textContent = ok ? "Klar" : "Mangler";
+  const idEl = document.createElement("span"); idEl.className = "id"; idEl.textContent = id;
+  const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = text;
+  li.append(chip, idEl, meta); $("log").appendChild(li);
+}
 
 $("go").onclick = async () => {
   const ids = parseIds($("ids").value);
   if (!ids.length) { $("status").textContent = "Indsæt mindst ét varenummer."; return; }
+  const bg = document.querySelector('input[name="bg"]:checked').value;
   const valid = ids.filter(x => /^\d+$/.test(x));
+
   $("go").disabled = true; $("log").innerHTML = ""; $("bar").style.display = "block";
-  ids.filter(x => !/^\d+$/.test(x)).forEach(x => log(`${x}: ikke et gyldigt varenummer`, "err"));
-  const bar = $("bar").firstElementChild, files = [], missing = [];
+  const bar = $("bar").firstElementChild; bar.style.width = "0";
+  const files = [], missing = [];
+  ids.filter(x => !/^\d+$/.test(x)).forEach(x => { log(false, x, "ikke et gyldigt varenummer"); missing.push(`${x}\tikke et gyldigt varenummer`); });
 
   try {
-    // 1) Hent produktdata i få samlede kald
     $("status").textContent = "Finder produkter...";
     const found = new Map();
     for (let i = 0; i < valid.length; i += BATCH) {
-      const chunk = valid.slice(i, i + BATCH);
-      const res = await fetch(API + chunk.join(","));
+      const res = await fetch(API + valid.slice(i, i + BATCH).join(","));
       if (!res.ok) throw new Error(`power.dk svarede ${res.status}`);
       for (const p of await res.json()) found.set(String(p.productId), p);
     }
 
-    // 2) Hent og gem ét billede pr. produkt
     for (let i = 0; i < valid.length; i++) {
       const id = valid[i], p = found.get(id);
       $("status").textContent = `Henter billede ${i + 1} af ${valid.length}`;
-      if (!p) { log(`${id}: ikke fundet på power.dk`, "err"); missing.push(`${id}\tikke fundet`); }
+      if (!p) { log(false, id, "ikke fundet på power.dk"); missing.push(`${id}\tikke fundet`); }
       else {
-        const url = bestTransparent(p.productImage);
-        if (!url) { log(`${id}: intet transparent billede`, "err"); missing.push(`${id}\tintet transparent billede`); }
+        const url = bestImage(p.productImage, bg);
+        if (!url) { log(false, id, "intet transparent billede"); missing.push(`${id}\tintet transparent billede`); }
         else {
           try {
-            const png = await toPng(await fetchImage(url));
+            const png = await toPng(await fetchImage(url), bg);
             files.push({ name: `${id}.png`, data: png.data });
-            log(`${id}.png  ${png.w} px  ${p.title || ""}`, "ok");
-          } catch (e) { log(`${id}: billedet kunne ikke hentes`, "err"); missing.push(`${id}\tbillede fejlede`); }
+            log(true, id, `${png.w} px  |  ${p.title || ""}`);
+          } catch (e) { log(false, id, "billedet kunne ikke hentes"); missing.push(`${id}\tbillede fejlede`); }
         }
       }
       bar.style.width = `${((i + 1) / valid.length) * 100}%`;
@@ -169,7 +305,7 @@ $("go").onclick = async () => {
       a.download = `power_billeder_${new Date().toISOString().slice(0, 10)}.zip`;
       document.body.appendChild(a); a.click(); a.remove();
       const n = files.length - (missing.length ? 1 : 0);
-      $("status").textContent = `Færdig: ${n} billeder downloadet${missing.length ? `, ${missing.length} mangler (se listen)` : ""}.`;
+      $("status").textContent = `Færdig: ${n} billeder downloadet${missing.length ? `, ${missing.length} mangler` : ""}.`;
     } else {
       $("status").textContent = "Ingen billeder fundet.";
     }
